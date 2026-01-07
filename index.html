@@ -15,19 +15,19 @@
                     <i class="fas fa-chart-line logo-icon"></i>
                     <div>
                         <h1 class="app-title">Sistema de Filtragem de Produtividade</h1>
-                        <p class="app-subtitle">Análise e monitoramento de equipes em tempo real</p>
+                        <p class="app-subtitle">Análise automática de dados - Última atualização: <span id="lastUpdate">Carregando...</span></p>
                     </div>
                 </div>
                 <div class="header-stats">
                     <div class="stat-card">
-                        <i class="fas fa-users stat-icon"></i>
+                        <i class="fas fa-file-csv stat-icon"></i>
                         <div>
-                            <span class="stat-value" id="totalTeams">0</span>
-                            <span class="stat-label">Equipes</span>
+                            <span class="stat-value" id="csvFileName">-</span>
+                            <span class="stat-label">Arquivo CSV</span>
                         </div>
                     </div>
                     <div class="stat-card">
-                        <i class="fas fa-filter stat-icon"></i>
+                        <i class="fas fa-users stat-icon"></i>
                         <div>
                             <span class="stat-value" id="filteredTeams">0</span>
                             <span class="stat-label">Filtradas</span>
@@ -38,33 +38,26 @@
         </header>
 
         <main class="app-main">
-            <section class="upload-section card">
-                <h2 class="section-title">
-                    <i class="fas fa-file-upload"></i>
-                    Carregar Dados
-                </h2>
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-content">
-                        <i class="fas fa-cloud-upload-alt upload-icon"></i>
-                        <p class="upload-text">Arraste e solte seu arquivo CSV aqui</p>
-                        <p class="upload-subtext">ou</p>
-                        <label for="csvFile" class="btn btn-primary">
-                            <i class="fas fa-folder-open"></i>
-                            Selecione o Arquivo
-                        </label>
-                        <input type="file" id="csvFile" accept=".csv" class="file-input">
-                        <div id="fileInfo" class="file-info"></div>
+            <section class="info-section card">
+                <div class="info-content">
+                    <div class="info-item">
+                        <i class="fas fa-info-circle info-icon"></i>
+                        <div>
+                            <h3>Como funciona:</h3>
+                            <p>O sistema carrega automaticamente o arquivo CSV da pasta <code>/data/</code>.</p>
+                            <p>Para atualizar os dados, basta fazer push de um novo arquivo CSV para o GitHub.</p>
+                        </div>
                     </div>
-                </div>
-                <div class="upload-actions">
-                    <button id="processBtn" class="btn btn-success" disabled>
-                        <i class="fas fa-cogs"></i>
-                        Processar Dados
-                    </button>
-                    <button id="resetBtn" class="btn btn-outline">
-                        <i class="fas fa-redo"></i>
-                        Limpar Tudo
-                    </button>
+                    <div class="info-item">
+                        <i class="fas fa-sync-alt info-icon"></i>
+                        <div>
+                            <h3>Auto-atualização:</h3>
+                            <p>Última verificação: <span id="lastCheck">-</span></p>
+                            <button id="refreshBtn" class="btn btn-primary btn-sm">
+                                <i class="fas fa-redo"></i> Verificar Atualizações
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -72,6 +65,9 @@
                 <h2 class="section-title">
                     <i class="fas fa-filter"></i>
                     Condições de Filtragem
+                    <span class="filter-toggle" id="toggleAllFilters">
+                        <i class="fas fa-toggle-on"></i> Todos
+                    </span>
                 </h2>
                 <div class="filters-grid" id="filtersContainer">
                     <!-- Filtros serão gerados dinamicamente -->
@@ -85,7 +81,10 @@
                         Resumo da Análise
                     </h3>
                     <div class="summary-content" id="summaryContent">
-                        <p>Carregue um arquivo CSV para começar a análise.</p>
+                        <div class="loading-state">
+                            <div class="spinner small"></div>
+                            <p>Carregando dados do CSV...</p>
+                        </div>
                     </div>
                 </div>
 
@@ -94,15 +93,12 @@
                         <h3 class="table-title">
                             <i class="fas fa-table"></i>
                             Resultados Filtrados
+                            <span class="badge" id="resultsCount">0 resultados</span>
                         </h3>
                         <div class="table-actions">
-                            <button id="exportBtn" class="btn btn-outline btn-sm" disabled>
-                                <i class="fas fa-download"></i>
-                                Exportar CSV
-                            </button>
                             <button id="toggleViewBtn" class="btn btn-outline btn-sm">
                                 <i class="fas fa-th-large"></i>
-                                Alternar Visualização
+                                Cards
                             </button>
                         </div>
                     </div>
@@ -110,6 +106,10 @@
                     <div class="loading-overlay" id="loadingOverlay">
                         <div class="spinner"></div>
                         <p>Processando dados...</p>
+                    </div>
+                    
+                    <div class="data-message" id="dataMessage">
+                        <!-- Mensagens de status serão exibidas aqui -->
                     </div>
                     
                     <div class="table-view" id="tableView">
@@ -146,8 +146,8 @@
         <footer class="app-footer">
             <div class="footer-content">
                 <div class="footer-info">
-                    <p><i class="fas fa-info-circle"></i> Sistema de Análise de Produtividade v1.0</p>
-                    <p class="footer-hint">Desenvolvido para análise e monitoramento de equipes operacionais</p>
+                    <p><i class="fas fa-info-circle"></i> Sistema de Análise de Produtividade v2.0</p>
+                    <p class="footer-hint">Atualização automática via GitHub - Para atualizar os dados, faça push de um novo CSV</p>
                 </div>
                 <div class="footer-legend">
                     <div class="legend-item">
@@ -171,23 +171,23 @@
         </footer>
     </div>
 
-    <!-- Modal para erros -->
+    <!-- Modal para detalhes -->
     <div id="errorModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header error">
-                <h3><i class="fas fa-exclamation-triangle"></i> Erro no Processamento</h3>
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-triangle"></i> Informação do Sistema</h3>
                 <button class="modal-close">&times;</button>
             </div>
             <div class="modal-body">
                 <p id="errorMessage"></p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" id="closeErrorModal">Entendi</button>
+                <button class="btn btn-primary" id="closeErrorModal">OK</button>
             </div>
         </div>
     </div>
 
-    <script src="js/csvParser.js"></script>
+    <script src="js/csvLoader.js"></script>
     <script src="js/dataFilter.js"></script>
     <script src="js/uiManager.js"></script>
     <script src="js/app.js"></script>
