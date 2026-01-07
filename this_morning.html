@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabela Filtrada - Produtividade Equipes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .legend {
+            background-color: #f1f8ff;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .legend h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 18px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 8px;
+            display: inline-block;
+        }
+        
+        .conditions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .condition {
+            padding: 15px;
+            background-color: white;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        }
+        
+        .condition h3 {
+            color: #2c3e50;
+            font-size: 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .condition h3::before {
+            content: "";
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .condition-1 h3::before { background-color: #e74c3c; }
+        .condition-2 h3::before { background-color: #f39c12; }
+        .condition-3 h3::before { background-color: #3498db; }
+        .condition-4 h3::before { background-color: #9b59b6; } /* Lilas */
+        
+        .condition p {
+            font-size: 14px;
+            color: #555;
+        }
+        
+        .table-container {
+            overflow-x: auto;
+            padding: 20px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+        
+        thead {
+            background-color: #2c3e50;
+            color: white;
+        }
+        
+        th {
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            border-right: 1px solid #3a506b;
+        }
+        
+        th:last-child {
+            border-right: none;
+        }
+        
+        tbody tr {
+            border-bottom: 1px solid #e0e0e0;
+            transition: background-color 0.2s;
+        }
+        
+        tbody tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        td {
+            padding: 14px 12px;
+            font-size: 14px;
+        }
+        
+        .highlight-action {
+            background-color: #ffeaea;
+            color: #c0392b;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .highlight-desp {
+            background-color: #fff4e6;
+            color: #e67e22;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .highlight-desl {
+            background-color: #e8f4fc;
+            color: #2980b9;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .highlight-login {
+            background-color: #f3e8f6; /* Lilas claro */
+            color: #8e44ad; /* Lilas escuro */
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        .empty-cell {
+            color: #95a5a6;
+            font-style: italic;
+        }
+        
+        footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 13px;
+            color: #7f8c8d;
+            border-top: 1px solid #e0e0e0;
+            background-color: #f8f9fa;
+        }
+        
+        .summary {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin: 15px 20px;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+        }
+        
+        .login-atrasado {
+            background-color: #f3e8f6; /* Lilas claro */
+            color: #8e44ad; /* Lilas escuro */
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        
+        @media (max-width: 768px) {
+            .conditions {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-container {
+                padding: 10px;
+            }
+            
+            th, td {
+                padding: 10px 8px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Tabela Filtrada - Produtividade UO TR - CE</h1>
+            <p class="subtitle">Painel de Acompanhamento - Filtrado por Condições Específicas</p>
+        </header>
+        
+        <section class="legend">
+            <h2>Condições de Filtragem</h2>
+            <p style="margin-bottom: 15px; color: #555;">A tabela abaixo mostra apenas as equipes que atendem a pelo menos uma das seguintes condições:</p>
+            
+            <div class="conditions">
+                <div class="condition condition-1">
+                    <h3>Condição 1: Ação diferente de "-"</h3>
+                    <p>Equipes com alguma ação registrada (ex: "Reparo >60", "Desloc. >50", "Login Atrasado", "Sem Ordem >30")</p>
+                </div>
+                
+                <div class="condition condition-2">
+                    <h3>Condição 2: 1º Desp > 10</h3>
+                    <p>Equipes com tempo do primeiro despacho superior a 10 minutos</p>
+                </div>
+                
+                <div class="condition condition-3">
+                    <h3>Condição 3: 1º Desl > 25</h3>
+                    <p>Equipes com tempo do primeiro deslocamento superior a 25 minutos</p>
+                </div>
+                
+                <div class="condition condition-4">
+                    <h3>Condição 4: 1º Login > 5</h3>
+                    <p>Equipes com tempo do primeiro login superior a 5 minutos</p>
+                </div>
+            </div>
+        </section>
+        
+        <div class="summary">
+            <p><strong>Resumo:</strong> Aplicando as 4 condições de filtragem, <strong>12 equipes</strong> foram selecionadas das 19 equipes disponíveis no arquivo.</p>
+        </div>
+        
+        <section class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Equipe</th>
+                        <th>Login</th>
+                        <th>Início Calendário</th>
+                        <th>Ação</th>
+                        <th>Status Desloc</th>
+                        <th>1º Login</th>
+                        <th>1º Desp</th>
+                        <th>1º Desl</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>IPK-RD-11B</td>
+                        <td>04:53</td>
+                        <td>06:00</td>
+                        <td><span class="highlight-action">Reparo >60</span></td>
+                        <td>No Local</td>
+                        <td>0</td>
+                        <td><span class="highlight-desp">21</span></td>
+                        <td><span class="highlight-desl">28</span></td>
+                    </tr>
+                    <tr>
+                        <td>IPK-SK-01B</td>
+                        <td>06:22</td>
+                        <td>07:00</td>
+                        <td>-</td>
+                        <td>Em Deslocamento</td>
+                        <td>0</td>
+                        <td>7</td>
+                        <td><span class="highlight-desl">73</span></td>
+                    </tr>
+                    <tr>
+                        <td>ACA-RD-02B</td>
+                        <td>07:26</td>
+                        <td>08:00</td>
+                        <td><span class="highlight-action">Reparo >60</span></td>
+                        <td>No Local</td>
+                        <td>0</td>
+                        <td>4</td>
+                        <td>16</td>
+                    </tr>
+                    <tr>
+                        <td>ACU-TR-01B</td>
+                        <td>06:28</td>
+                        <td>07:00</td>
+                        <td><span class="highlight-action">Reparo >60</span></td>
+                        <td>No Local</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td><span class="highlight-desl">50</span></td>
+                    </tr>
+                    <tr>
+                        <td>ACU-TR-02B</td>
+                        <td>07:43</td>
+                        <td>08:00</td>
+                        <td><span class="highlight-action">Reparo >60</span></td>
+                        <td>No Local</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>2</td>
+                    </tr>
+                    <tr>
+                        <td>IPK-RD-10B</td>
+                        <td>07:46</td>
+                        <td>07:30</td>
+                        <td><span class="highlight-action">Sem Ordem >30</span></td>
+                        <td>Sem Ordem</td>
+                        <td><span class="highlight-login">16</span></td>
+                        <td><span class="highlight-desp">77</span></td>
+                        <td><span class="highlight-desl">85</span></td>
+                    </tr>
+                    <tr>
+                        <td>IPK-RD-21B</td>
+                        <td>05:52</td>
+                        <td>06:00</td>
+                        <td><span class="highlight-action">Desloc. >50</span></td>
+                        <td>Em Deslocamento</td>
+                        <td>0</td>
+                        <td><span class="highlight-desp">26</span></td>
+                        <td><span class="highlight-desl">45</span></td>
+                    </tr>
+                    <tr>
+                        <td>ITE-RD-01B</td>
+                        <td>06:42</td>
+                        <td>07:00</td>
+                        <td><span class="highlight-action">Reparo >60</span></td>
+                        <td>No Local</td>
+                        <td>0</td>
+                        <td><span class="highlight-desp">13</span></td>
+                        <td>22</td>
+                    </tr>
+                    <tr>
+                        <td>ITE-RD-03B</td>
+                        <td>06:47</td>
+                        <td>07:00</td>
+                        <td><span class="highlight-action">Reparo >60</span></td>
+                        <td>No Local</td>
+                        <td>0</td>
+                        <td>7</td>
+                        <td><span class="highlight-desl">30</span></td>
+                    </tr>
+                    <tr>
+                        <td>ITE-RD-10B</td>
+                        <td><span class="empty-cell">(Empty)</span></td>
+                        <td>07:00</td>
+                        <td><span class="login-atrasado">Login Atrasado</span></td>
+                        <td><span class="empty-cell">(Empty)</span></td>
+                        <td><span class="empty-cell">(Empty)</span></td>
+                        <td><span class="highlight-desp">33</span></td>
+                        <td><span class="highlight-desl">43</span></td>
+                    </tr>
+                    <tr>
+                        <td>ITJ-RD-05B</td>
+                        <td>07:40</td>
+                        <td>08:00</td>
+                        <td>-</td>
+                        <td>Em Deslocamento</td>
+                        <td>0</td>
+                        <td><span class="highlight-desp">58</span></td>
+                        <td><span class="highlight-desl">64</span></td>
+                    </tr>
+                    <tr>
+                        <td>ITJ-SG-07B</td>
+                        <td>07:32</td>
+                        <td>08:00</td>
+                        <td>-</td>
+                        <td>No Local</td>
+                        <td>0</td>
+                        <td><span class="highlight-desp">30</span></td>
+                        <td><span class="highlight-desl">39</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        
+        <footer>
+            <p>Painel de Acompanhamento de Produtividade | Dados filtrados em tempo real</p>
+            <p style="margin-top: 5px; font-size: 12px;">
+                Cores de destaque: 
+                <span style="color: #e74c3c; font-weight: 600;">Ação diferente de "-"</span> | 
+                <span style="color: #f39c12; font-weight: 600;">1º Desp > 10</span> | 
+                <span style="color: #3498db; font-weight: 600;">1º Desl > 25</span> |
+                <span style="color: #8e44ad; font-weight: 600;">1º Login > 5</span>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // Adiciona interatividade às linhas da tabela
+        document.addEventListener('DOMContentLoaded', function() {
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                row.addEventListener('click', function() {
+                    // Remove a seleção de todas as linhas
+                    rows.forEach(r => r.style.backgroundColor = '');
+                    
+                    // Destaca a linha clicada
+                    this.style.backgroundColor = '#f0f7ff';
+                });
+            });
+            
+            // Adiciona tooltip para células com valores destacados
+            const highlightedCells = document.querySelectorAll('.highlight-action, .highlight-desp, .highlight-desl, .highlight-login, .login-atrasado');
+            highlightedCells.forEach(cell => {
+                cell.title = "Valor atende a uma das condições de filtragem";
+            });
+        });
+    </script>
+</body>
+</html>
