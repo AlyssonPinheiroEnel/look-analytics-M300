@@ -1,0 +1,17 @@
+{
+  "name": "produtividade-filter",
+  "version": "1.0.0",
+  "description": "Sistema de filtragem de produtividade para GitHub Pages",
+  "main": "index.html",
+  "scripts": {
+    "start": "live-server --port=3000",
+    "deploy": "gh-pages -d ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "gh-pages": "^5.0.0",
+    "live-server": "^1.2.2"
+  }
+}
