@@ -1,5 +1,10 @@
 let dadosOriginais = [];
+let dadosExibidos = [];
 let filtroAtual = 'todos';
+let ordenacao = {
+    coluna: null,
+    direcao: 'asc' // 'asc' ou 'desc'
+};
 
 // Configurações das colunas
 const COLUNAS = {
@@ -11,6 +16,18 @@ const COLUNAS = {
     LOGIN1: '1º Login',
     DESP1: '1º Desp',
     DESL1: '1º Desl.'
+};
+
+// Mapeamento das colunas para ordenação
+const MAPA_COLUNAS = {
+    'equipe': COLUNAS.EQUIPE,
+    'inicio': COLUNAS.INICIO,
+    'login': COLUNAS.LOGIN,
+    'acao': COLUNAS.ACAO,
+    'status': COLUNAS.STATUS,
+    'login1': COLUNAS.LOGIN1,
+    'desp1': COLUNAS.DESP1,
+    'desl1': COLUNAS.DESL1
 };
 
 // Detecta separador do CSV
@@ -138,53 +155,74 @@ function aplicarCorCelula(valor, condicao, tipoCondicao) {
     ">${valor}</span>`;
 }
 
-// Atualiza tabela
-function atualizarTabela() {
-    const tbody = document.getElementById('dados');
-    const exportBtn = document.getElementById('exportBtn');
-    
-    // Filtra dados conforme filtro atual
-    let dadosExibir = [];
-    let contadores = { cond1: 0, cond2: 0, cond3: 0, cond4: 0 };
-    
-    dadosOriginais.forEach(linha => {
-        const cond = verificarCondicoes(linha);
-        
-        // Conta condições
-        if (cond.cond1) contadores.cond1++;
-        if (cond.cond2) contadores.cond2++;
-        if (cond.cond3) contadores.cond3++;
-        if (cond.cond4) contadores.cond4++;
-        
-        // Verifica se deve exibir
-        let exibir = false;
-        switch(filtroAtual) {
-            case 'todos': exibir = cond.temQualquer; break;
-            case 'cond1': exibir = cond.cond1; break;
-            case 'cond2': exibir = cond.cond2; break;
-            case 'cond3': exibir = cond.cond3; break;
-            case 'cond4': exibir = cond.cond4; break;
-        }
-        
-        if (exibir) dadosExibir.push({ linha, cond });
+// Ordena a tabela
+function ordenarTabela(coluna) {
+    // Remove classes de ordenação de todas as colunas
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.classList.remove('asc', 'desc');
     });
     
-    // Atualiza resumo
-    document.getElementById('total').textContent = dadosOriginais.length;
-    document.getElementById('cond1').textContent = contadores.cond1;
-    document.getElementById('cond2').textContent = contadores.cond2;
-    document.getElementById('cond3').textContent = contadores.cond3;
-    document.getElementById('cond4').textContent = contadores.cond4;
+    // Se clicar na mesma coluna, inverte a direção
+    if (ordenacao.coluna === coluna) {
+        ordenacao.direcao = ordenacao.direcao === 'asc' ? 'desc' : 'asc';
+    } else {
+        ordenacao.coluna = coluna;
+        ordenacao.direcao = 'asc';
+    }
     
-    // Atualiza contador da tabela
-    document.getElementById('tableCount').textContent = 
-        `Mostrando ${dadosExibir.length} de ${dadosOriginais.length} equipes`;
+    // Adiciona classe à coluna atual
+    const thAtual = document.querySelector(`th[data-column="${coluna}"]`);
+    thAtual.classList.add(ordenacao.direcao);
     
-    // Habilita/desabilita botão de exportação
-    exportBtn.disabled = dadosExibir.length === 0;
+    // Ordena os dados
+    if (dadosExibidos.length > 0) {
+        ordenarDados(coluna, ordenacao.direcao);
+        renderizarTabela();
+    }
+}
+
+// Função de ordenação dos dados
+function ordenarDados(coluna, direcao) {
+    const colunaReal = MAPA_COLUNAS[coluna];
     
-    // Renderiza tabela
-    if (dadosExibir.length === 0) {
+    dadosExibidos.sort((a, b) => {
+        const valorA = a.linha[colunaReal];
+        const valorB = b.linha[colunaReal];
+        
+        // Tratamento especial para valores numéricos
+        const parseNum = (valor) => {
+            if (!valor || valor === '(Empty)' || valor === '-' || valor === '' || valor === '(empty)') return null;
+            const num = parseFloat(valor.toString().replace(',', '.'));
+            return isNaN(num) ? null : num;
+        };
+        
+        const numA = parseNum(valorA);
+        const numB = parseNum(valorB);
+        
+        // Se ambos são números, ordena numericamente
+        if (numA !== null && numB !== null) {
+            return direcao === 'asc' ? numA - numB : numB - numA;
+        }
+        
+        // Se um é número e outro não, números vêm primeiro
+        if (numA !== null && numB === null) return direcao === 'asc' ? -1 : 1;
+        if (numA === null && numB !== null) return direcao === 'asc' ? 1 : -1;
+        
+        // Caso contrário, ordena como string
+        const strA = String(valorA || '').toLowerCase();
+        const strB = String(valorB || '').toLowerCase();
+        
+        if (strA < strB) return direcao === 'asc' ? -1 : 1;
+        if (strA > strB) return direcao === 'asc' ? 1 : -1;
+        return 0;
+    });
+}
+
+// Renderiza a tabela
+function renderizarTabela() {
+    const tbody = document.getElementById('dados');
+    
+    if (dadosExibidos.length === 0) {
         tbody.innerHTML = `
             <tr>
                 <td colspan="8">
@@ -204,7 +242,7 @@ function atualizarTabela() {
     }
     
     let html = '';
-    dadosExibir.forEach((item, index) => {
+    dadosExibidos.forEach((item, index) => {
         const l = item.linha;
         const c = item.cond;
         
@@ -227,6 +265,59 @@ function atualizarTabela() {
     });
     
     tbody.innerHTML = html;
+}
+
+// Atualiza tabela (inclui filtragem e ordenação)
+function atualizarTabela() {
+    const exportBtn = document.getElementById('exportBtn');
+    
+    // Filtra dados conforme filtro atual
+    dadosExibidos = [];
+    let contadores = { cond1: 0, cond2: 0, cond3: 0, cond4: 0 };
+    
+    dadosOriginais.forEach(linha => {
+        const cond = verificarCondicoes(linha);
+        
+        // Conta condições
+        if (cond.cond1) contadores.cond1++;
+        if (cond.cond2) contadores.cond2++;
+        if (cond.cond3) contadores.cond3++;
+        if (cond.cond4) contadores.cond4++;
+        
+        // Verifica se deve exibir
+        let exibir = false;
+        switch(filtroAtual) {
+            case 'todos': exibir = cond.temQualquer; break;
+            case 'cond1': exibir = cond.cond1; break;
+            case 'cond2': exibir = cond.cond2; break;
+            case 'cond3': exibir = cond.cond3; break;
+            case 'cond4': exibir = cond.cond4; break;
+        }
+        
+        if (exibir) dadosExibidos.push({ linha, cond });
+    });
+    
+    // Aplica ordenação se existir
+    if (ordenacao.coluna && dadosExibidos.length > 0) {
+        ordenarDados(ordenacao.coluna, ordenacao.direcao);
+    }
+    
+    // Atualiza resumo
+    document.getElementById('total').textContent = dadosOriginais.length;
+    document.getElementById('cond1').textContent = contadores.cond1;
+    document.getElementById('cond2').textContent = contadores.cond2;
+    document.getElementById('cond3').textContent = contadores.cond3;
+    document.getElementById('cond4').textContent = contadores.cond4;
+    
+    // Atualiza contador da tabela
+    document.getElementById('tableCount').textContent = 
+        `Mostrando ${dadosExibidos.length} de ${dadosOriginais.length} equipes`;
+    
+    // Habilita/desabilita botão de exportação
+    exportBtn.disabled = dadosExibidos.length === 0;
+    
+    // Renderiza tabela
+    renderizarTabela();
 }
 
 // Aplica filtro
@@ -354,14 +445,17 @@ async function exportarParaPNG() {
         
         exportContainer.appendChild(summaryDiv);
         
-        // Adiciona filtro atual
-        const filterDiv = document.createElement('div');
-        filterDiv.style.cssText = `
+        // Adiciona filtro atual e ordenação
+        const infoDiv = document.createElement('div');
+        infoDiv.style.cssText = `
             margin-bottom: 20px;
             padding: 15px;
             background: #e9ecef;
             border-radius: 8px;
             font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         `;
         
         const filterLabels = {
@@ -372,8 +466,28 @@ async function exportarParaPNG() {
             'cond4': '1º Login > 5'
         };
         
-        filterDiv.textContent = `Filtro aplicado: ${filterLabels[filtroAtual]} | Mostrando ${document.getElementById('tableCount').textContent}`;
-        exportContainer.appendChild(filterDiv);
+        const filterText = document.createElement('div');
+        filterText.textContent = `Filtro: ${filterLabels[filtroAtual]} | ${document.getElementById('tableCount').textContent}`;
+        
+        const orderText = document.createElement('div');
+        if (ordenacao.coluna) {
+            const orderLabels = {
+                'equipe': 'Equipe',
+                'inicio': 'Início Calendário',
+                'login': 'Login',
+                'acao': 'Ação',
+                'status': 'Status Desloc',
+                'login1': '1º Login',
+                'desp1': '1º Desp',
+                'desl1': '1º Desl.'
+            };
+            orderText.textContent = `Ordenação: ${orderLabels[ordenacao.coluna]} (${ordenacao.direcao === 'asc' ? 'Crescente ↑' : 'Decrescente ↓'})`;
+            orderText.style.fontWeight = 'bold';
+        }
+        
+        infoDiv.appendChild(filterText);
+        infoDiv.appendChild(orderText);
+        exportContainer.appendChild(infoDiv);
         
         // Adiciona legenda das cores
         const legendDiv = document.createElement('div');
@@ -436,35 +550,93 @@ async function exportarParaPNG() {
         
         exportContainer.appendChild(legendDiv);
         
-        // Adiciona a tabela original (clonada)
-        const tableClone = document.getElementById('tableContainer').cloneNode(true);
-        tableClone.style.width = '100%';
-        tableClone.style.overflow = 'visible';
+        // Adiciona a tabela
+        const tableContainer = document.createElement('div');
+        tableContainer.style.overflow = 'visible';
         
-        // Remove elementos interativos e ajusta estilos
-        const table = tableClone.querySelector('table');
+        // Cria uma nova tabela para exportação
+        const table = document.createElement('table');
         table.style.width = '100%';
-        table.style.minWidth = '100%';
         table.style.borderCollapse = 'collapse';
         table.style.fontSize = '12px';
         
-        // Ajusta estilos das células
-        const ths = table.querySelectorAll('th');
-        ths.forEach(th => {
-            th.style.padding = '12px 15px';
-            th.style.background = '#343a40';
-            th.style.color = 'white';
-            th.style.fontWeight = 'bold';
-            th.style.border = '1px solid #dee2e6';
+        // Cabeçalho
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        
+        ['Equipe', 'Início Calendário', 'Login', 'Ação', 'Status Desloc', '1º Login', '1º Desp', '1º Desl.'].forEach(text => {
+            const th = document.createElement('th');
+            th.textContent = text;
+            th.style.cssText = `
+                padding: 12px 15px;
+                background: #343a40;
+                color: white;
+                font-weight: bold;
+                border: 1px solid #dee2e6;
+                text-align: left;
+            `;
+            headerRow.appendChild(th);
         });
         
-        const tds = table.querySelectorAll('td');
-        tds.forEach(td => {
-            td.style.padding = '10px 15px';
-            td.style.border = '1px solid #dee2e6';
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+        
+        // Corpo da tabela
+        const tbody = document.createElement('tbody');
+        
+        dadosExibidos.forEach(item => {
+            const tr = document.createElement('tr');
+            const l = item.linha;
+            
+            // Aplica cores baseadas nas condições
+            const cond = item.cond;
+            const rowStyle = cond.cond1 ? 'background-color: rgba(247, 37, 133, 0.08);' :
+                          cond.cond2 ? 'background-color: rgba(248, 150, 30, 0.08);' :
+                          cond.cond3 ? 'background-color: rgba(67, 97, 238, 0.08);' :
+                          cond.cond4 ? 'background-color: rgba(114, 9, 183, 0.08);' : '';
+            
+            tr.style.cssText = rowStyle;
+            
+            // Células
+            [COLUNAS.EQUIPE, COLUNAS.INICIO, COLUNAS.LOGIN, COLUNAS.ACAO, 
+             COLUNAS.STATUS, COLUNAS.LOGIN1, COLUNAS.DESP1, COLUNAS.DESL1].forEach(col => {
+                const td = document.createElement('td');
+                let valor = formatarValor(l[col]);
+                
+                // Aplica estilo especial para células com condições
+                if ((col === COLUNAS.ACAO && cond.cond1) ||
+                    (col === COLUNAS.DESP1 && cond.cond2) ||
+                    (col === COLUNAS.DESL1 && cond.cond3) ||
+                    (col === COLUNAS.LOGIN1 && cond.cond4)) {
+                    td.style.cssText = `
+                        padding: 10px 15px;
+                        border: 1px solid #dee2e6;
+                        font-weight: bold;
+                        background-color: ${col === COLUNAS.ACAO ? 'rgba(247, 37, 133, 0.15)' :
+                                         col === COLUNAS.DESP1 ? 'rgba(248, 150, 30, 0.15)' :
+                                         col === COLUNAS.DESL1 ? 'rgba(67, 97, 238, 0.15)' :
+                                         'rgba(114, 9, 183, 0.15)'};
+                        color: ${col === COLUNAS.ACAO ? '#f72585' :
+                               col === COLUNAS.DESP1 ? '#f8961e' :
+                               col === COLUNAS.DESL1 ? '#4361ee' : '#7209b7'};
+                    `;
+                } else {
+                    td.style.cssText = `
+                        padding: 10px 15px;
+                        border: 1px solid #dee2e6;
+                    `;
+                }
+                
+                td.textContent = valor;
+                tr.appendChild(td);
+            });
+            
+            tbody.appendChild(tr);
         });
         
-        exportContainer.appendChild(tableClone);
+        table.appendChild(tbody);
+        tableContainer.appendChild(table);
+        exportContainer.appendChild(tableContainer);
         
         // Adiciona footer
         const footer = document.createElement('div');
@@ -489,14 +661,7 @@ async function exportarParaPNG() {
             scale: 2,
             backgroundColor: '#ffffff',
             useCORS: true,
-            logging: false,
-            onclone: (clonedDoc) => {
-                // Ajusta estilos no clone
-                const clonedContainer = clonedDoc.querySelector('div');
-                clonedContainer.style.position = 'relative';
-                clonedContainer.style.top = '0';
-                clonedContainer.style.left = '0';
-            }
+            logging: false
         });
         
         // Converte canvas para imagem PNG
@@ -504,7 +669,7 @@ async function exportarParaPNG() {
         
         // Cria link para download
         const link = document.createElement('a');
-        const fileName = `equipes_filtradas_${filtroAtual}_${Date.now()}.png`;
+        const fileName = `equipes_filtradas_${filtroAtual}_${ordenacao.coluna || 'sem_ordenacao'}_${Date.now()}.png`;
         link.href = imgData;
         link.download = fileName;
         
@@ -573,6 +738,12 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const texto = e.target.result;
                 dadosOriginais = processarCSV(texto);
+                
+                // Reset ordenação
+                ordenacao = { coluna: null, direcao: 'asc' };
+                document.querySelectorAll('.sortable').forEach(th => {
+                    th.classList.remove('asc', 'desc');
+                });
                 
                 // Atualiza interface
                 uploadArea.innerHTML = `
