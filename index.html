@@ -3,231 +3,686 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teste Filtro CSV</title>
+    <title>Dashboard de Equipes | Filtro Inteligente</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #4cc9f0;
+            --danger: #f72585;
+            --warning: #f8961e;
+            --info: #7209b7;
+            --dark: #212529;
+            --light: #f8f9fa;
+            --gray: #6c757d;
+            --light-gray: #e9ecef;
+            --border-radius: 12px;
+            --box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: Arial, sans-serif;
         }
         
         body {
-            padding: 20px;
-            background: #f5f5f5;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--dark);
+            line-height: 1.6;
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            padding: 30px;
+        }
+        
+        /* Header */
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .logo-icon {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
         }
         
         h1 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #333;
-        }
-        
-        .upload-area {
-            border: 2px dashed #007bff;
-            border-radius: 10px;
-            padding: 40px 20px;
-            text-align: center;
-            background: white;
-            margin-bottom: 20px;
-            cursor: pointer;
-        }
-        
-        .upload-area:hover {
-            background: #f0f8ff;
-        }
-        
-        .upload-area i {
-            font-size: 48px;
-            color: #007bff;
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: white;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        /* Upload Section */
+        .upload-section {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: var(--box-shadow);
+            text-align: center;
+            animation: fadeIn 0.8s ease 0.2s both;
+            border: 2px dashed var(--light-gray);
+            transition: var(--transition);
+        }
+        
+        .upload-section:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+        
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: var(--primary);
+            animation: pulse 2s infinite;
+        }
+        
+        .upload-title {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+        
+        .upload-text {
+            color: var(--gray);
+            margin-bottom: 25px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .upload-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(67, 97, 238, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #4cc9f0, #4895ef);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(76, 201, 240, 0.3);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
         }
         
         input[type="file"] {
             display: none;
         }
         
-        .btn {
-            background: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin: 10px;
+        /* Stats Section */
+        .stats-section {
+            margin-bottom: 40px;
+            animation: fadeIn 0.8s ease 0.4s both;
         }
         
-        .btn:hover {
-            background: #0056b3;
-        }
-        
-        .resumo {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 10px;
+        .stats-title {
+            font-size: 1.3rem;
             margin-bottom: 20px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        .card {
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            transition: var(--transition);
+            box-shadow: var(--box-shadow);
+            border-left: 4px solid;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: white;
+        }
+        
+        .stat-card.total { border-left-color: var(--dark); }
+        .stat-card.total .stat-icon { background: linear-gradient(135deg, var(--dark), #495057); }
+        
+        .stat-card.cond1 { border-left-color: var(--danger); }
+        .stat-card.cond1 .stat-icon { background: linear-gradient(135deg, var(--danger), #e63946); }
+        
+        .stat-card.cond2 { border-left-color: var(--warning); }
+        .stat-card.cond2 .stat-icon { background: linear-gradient(135deg, var(--warning), #f3722c); }
+        
+        .stat-card.cond3 { border-left-color: var(--primary); }
+        .stat-card.cond3 .stat-icon { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+        
+        .stat-card.cond4 { border-left-color: var(--info); }
+        .stat-card.cond4 .stat-icon { background: linear-gradient(135deg, var(--info), #560bad); }
+        
+        .stat-content h3 {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--dark);
+        }
+        
+        /* Filters Section */
+        .filters-section {
             background: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-radius: var(--border-radius);
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: var(--box-shadow);
+            animation: fadeIn 0.8s ease 0.6s both;
         }
         
-        .card h3 {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 10px;
+        .filters-title {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        .card span {
-            font-size: 24px;
-            font-weight: bold;
-            color: #333;
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .filter-btn {
+            padding: 12px 24px;
+            border: 2px solid var(--light-gray);
+            background: white;
+            border-radius: 50px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+        
+        .filter-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+        
+        .filter-btn.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.2);
+        }
+        
+        /* Table Section */
+        .table-section {
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            animation: fadeIn 0.8s ease 0.8s both;
+        }
+        
+        .table-header {
+            background: linear-gradient(135deg, var(--dark), #343a40);
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-title {
+            color: white;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .table-count {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.95rem;
+        }
+        
+        .table-container {
+            overflow-x: auto;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-width: 1000px;
+        }
+        
+        thead {
+            background: var(--light-gray);
         }
         
         th {
-            background: #343a40;
-            color: white;
-            padding: 12px;
+            padding: 18px 20px;
             text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+            border-bottom: 2px solid #dee2e6;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
         }
         
         td {
-            padding: 10px 12px;
+            padding: 16px 20px;
             border-bottom: 1px solid #eee;
+            transition: var(--transition);
         }
         
-        tr:hover {
-            background: #f8f9fa;
+        tbody tr {
+            transition: var(--transition);
         }
         
-        .vermelho { background-color: rgba(220, 53, 69, 0.1) !important; }
-        .laranja { background-color: rgba(253, 126, 20, 0.1) !important; }
-        .azul { background-color: rgba(0, 123, 255, 0.1) !important; }
-        .lilas { background-color: rgba(111, 66, 193, 0.1) !important; }
+        tbody tr:hover {
+            background: rgba(67, 97, 238, 0.04);
+        }
         
-        .mensagem {
+        /* Condition Classes */
+        .cond1 td { background-color: rgba(247, 37, 133, 0.08) !important; }
+        .cond2 td { background-color: rgba(248, 150, 30, 0.08) !important; }
+        .cond3 td { background-color: rgba(67, 97, 238, 0.08) !important; }
+        .cond4 td { background-color: rgba(114, 9, 183, 0.08) !important; }
+        
+        /* Empty State */
+        .empty-state {
             text-align: center;
-            padding: 40px;
-            color: #666;
-            font-size: 18px;
+            padding: 60px 20px;
         }
         
-        .filtros {
-            display: flex;
-            gap: 10px;
+        .empty-icon {
+            font-size: 64px;
+            color: var(--light-gray);
             margin-bottom: 20px;
-            flex-wrap: wrap;
         }
         
-        .filtro-btn {
-            padding: 8px 16px;
-            border: 1px solid #ddd;
-            background: white;
-            border-radius: 5px;
-            cursor: pointer;
+        .empty-title {
+            font-size: 1.3rem;
+            color: var(--gray);
+            margin-bottom: 10px;
         }
         
-        .filtro-btn.ativo {
-            background: #007bff;
+        .empty-text {
+            color: var(--gray);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            margin-top: 40px;
             color: white;
-            border-color: #007bff;
+            opacity: 0.8;
+            font-size: 0.9rem;
+            animation: fadeIn 1s ease 1s both;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .upload-section {
+                padding: 30px 20px;
+            }
+            
+            .upload-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .table-header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .filters {
+                justify-content: center;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .logo {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .stat-card {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--secondary), var(--primary));
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <h1><i class="fas fa-filter"></i> Teste Filtro CSV</h1>
-        
-        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-            <i class="fas fa-file-upload"></i>
-            <h3>Clique ou arraste um arquivo CSV</h3>
-            <p>Suporta CSV com tabulação, vírgula ou ponto-e-vírgula</p>
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-filter"></i>
+                </div>
+                <h1>Dashboard de Equipes</h1>
+            </div>
+            <p class="subtitle">Filtro inteligente para análise de produtividade em tempo real</p>
+        </header>
+
+        <!-- Upload Section -->
+        <section class="upload-section" id="uploadArea">
+            <div class="upload-icon">
+                <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <h2 class="upload-title">Carregar Relatório CSV</h2>
+            <p class="upload-text">
+                Arraste e solte seu arquivo CSV aqui ou clique no botão abaixo para selecionar.
+                Suporta arquivos separados por tabulação, vírgula ou ponto-e-vírgula.
+            </p>
+            <div class="upload-actions">
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-file-upload"></i> Selecionar Arquivo
+                </button>
+                <button class="btn btn-success" onclick="carregarExemplo()">
+                    <i class="fas fa-vial"></i> Usar Dados de Exemplo
+                </button>
+            </div>
             <input type="file" id="fileInput" accept=".csv">
-            <br>
-            <button class="btn" onclick="document.getElementById('fileInput').click()">
-                <i class="fas fa-upload"></i> Selecionar Arquivo
-            </button>
-            <button class="btn" onclick="carregarExemplo()" style="background: #28a745">
-                <i class="fas fa-vial"></i> Usar Exemplo
-            </button>
-        </div>
-        
-        <div class="resumo">
-            <div class="card">
-                <h3>Total Equipes</h3>
-                <span id="total">0</span>
+        </section>
+
+        <!-- Stats Section -->
+        <section class="stats-section">
+            <h2 class="stats-title">
+                <i class="fas fa-chart-line"></i> Resumo das Condições
+            </h2>
+            <div class="stats-grid">
+                <div class="stat-card total">
+                    <div class="stat-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total de Equipes</h3>
+                        <div class="stat-value" id="total">0</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card cond1">
+                    <div class="stat-icon">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Ação Preenchida</h3>
+                        <div class="stat-value" id="cond1">0</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card cond2">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>1º Desp > 10</h3>
+                        <div class="stat-value" id="cond2">0</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card cond3">
+                    <div class="stat-icon">
+                        <i class="fas fa-truck"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>1º Desl > 25</h3>
+                        <div class="stat-value" id="cond3">0</div>
+                    </div>
+                </div>
+                
+                <div class="stat-card cond4">
+                    <div class="stat-icon">
+                        <i class="fas fa-sign-in-alt"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>1º Login > 5</h3>
+                        <div class="stat-value" id="cond4">0</div>
+                    </div>
+                </div>
             </div>
-            <div class="card" style="border-left: 4px solid #dc3545">
-                <h3>Ação ≠ '-'</h3>
-                <span id="cond1">0</span>
+        </section>
+
+        <!-- Filters Section -->
+        <section class="filters-section">
+            <h2 class="filters-title">
+                <i class="fas fa-sliders-h"></i> Filtros de Visualização
+            </h2>
+            <div class="filters">
+                <button class="filter-btn active" onclick="filtrar('todos')">
+                    <i class="fas fa-list"></i> Todas as Condições
+                </button>
+                <button class="filter-btn" onclick="filtrar('cond1')">
+                    <i class="fas fa-circle" style="color: #f72585"></i> Ação ≠ '-'
+                </button>
+                <button class="filter-btn" onclick="filtrar('cond2')">
+                    <i class="fas fa-circle" style="color: #f8961e"></i> 1º Desp > 10
+                </button>
+                <button class="filter-btn" onclick="filtrar('cond3')">
+                    <i class="fas fa-circle" style="color: #4361ee"></i> 1º Desl > 25
+                </button>
+                <button class="filter-btn" onclick="filtrar('cond4')">
+                    <i class="fas fa-circle" style="color: #7209b7"></i> 1º Login > 5
+                </button>
             </div>
-            <div class="card" style="border-left: 4px solid #fd7e14">
-                <h3>1º Desp > 10</h3>
-                <span id="cond2">0</span>
+        </section>
+
+        <!-- Table Section -->
+        <section class="table-section">
+            <div class="table-header">
+                <h2 class="table-title">
+                    <i class="fas fa-table"></i> Equipes Filtradas
+                </h2>
+                <div class="table-count" id="tableCount">
+                    Mostrando 0 de 0 equipes
+                </div>
             </div>
-            <div class="card" style="border-left: 4px solid #007bff">
-                <h3>1º Desl > 25</h3>
-                <span id="cond3">0</span>
+            <div class="table-container">
+                <table id="tabela">
+                    <thead>
+                        <tr>
+                            <th>Equipe</th>
+                            <th>Início Calendário</th>
+                            <th>Login</th>
+                            <th>Ação</th>
+                            <th>Status Desloc</th>
+                            <th>1º Login</th>
+                            <th>1º Desp</th>
+                            <th>1º Desl.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dados">
+                        <tr>
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <div class="empty-icon">
+                                        <i class="fas fa-database"></i>
+                                    </div>
+                                    <h3 class="empty-title">Nenhum dado carregado</h3>
+                                    <p class="empty-text">
+                                        Faça upload de um arquivo CSV ou use os dados de exemplo para visualizar as equipes filtradas.
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <div class="card" style="border-left: 4px solid #6f42c1">
-                <h3>1º Login > 5</h3>
-                <span id="cond4">0</span>
-            </div>
-        </div>
-        
-        <div class="filtros">
-            <button class="filtro-btn ativo" onclick="filtrar('todos')">Todas as Condições</button>
-            <button class="filtro-btn" onclick="filtrar('cond1')">Ação ≠ '-'</button>
-            <button class="filtro-btn" onclick="filtrar('cond2')">1º Desp > 10</button>
-            <button class="filtro-btn" onclick="filtrar('cond3')">1º Desl > 25</button>
-            <button class="filtro-btn" onclick="filtrar('cond4')">1º Login > 5</button>
-        </div>
-        
-        <div class="table-container">
-            <table id="tabela">
-                <thead>
-                    <tr>
-                        <th>Equipe</th>
-                        <th>Início Calendário</th>
-                        <th>Login</th>
-                        <th>Ação</th>
-                        <th>Status Desloc</th>
-                        <th>1º Login</th>
-                        <th>1º Desp</th>
-                        <th>1º Desl.</th>
-                    </tr>
-                </thead>
-                <tbody id="dados">
-                    <tr>
-                        <td colspan="8" class="mensagem">
-                            <i class="fas fa-database" style="font-size: 48px; color: #ddd; margin-bottom: 15px"></i>
-                            <p>Nenhum dado carregado</p>
-                            <p>Faça upload de um arquivo CSV para visualizar os dados</p>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p>© 2024 Dashboard de Equipes | Desenvolvido para análise de produtividade</p>
+            <p><i class="fas fa-code"></i> Funciona 100% no navegador - Sem necessidade de servidor</p>
+        </footer>
     </div>
 
     <script src="script.js"></script>

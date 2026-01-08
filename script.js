@@ -1,5 +1,4 @@
 let dadosOriginais = [];
-let dadosFiltrados = [];
 let filtroAtual = 'todos';
 
 // Configurações das colunas
@@ -28,23 +27,27 @@ function detectarSeparador(linha) {
 // Processa arquivo CSV
 function processarCSV(texto) {
     const linhas = texto.split('\n').filter(l => l.trim() !== '');
-    if (linhas.length < 2) throw new Error('Arquivo vazio');
+    if (linhas.length < 2) throw new Error('Arquivo vazio ou inválido');
     
     // Detecta separador
     const separador = detectarSeparador(linhas[0]);
+    console.log(`Separador detectado: ${separador === '\t' ? 'TAB' : separador}`);
     
     // Processa cabeçalhos
     const cabecalhos = linhas[0].split(separador).map(h => h.trim().replace(/"/g, ''));
+    console.log('Cabeçalhos:', cabecalhos);
     
-    // Encontra índices das colunas que precisamos
+    // Encontra índices das colunas
     const indices = {};
     Object.keys(COLUNAS).forEach(chave => {
         const nome = COLUNAS[chave];
         const idx = cabecalhos.findIndex(h => 
             h.toLowerCase() === nome.toLowerCase() ||
-            h.toLowerCase().replace('º', '°') === nome.toLowerCase().replace('º', '°')
+            h.toLowerCase().replace('º', '°') === nome.toLowerCase().replace('º', '°') ||
+            h.toLowerCase().replace('desl.', 'desl') === nome.toLowerCase().replace('desl.', 'desl')
         );
         indices[chave] = idx !== -1 ? idx : null;
+        if (idx !== -1) console.log(`Coluna "${nome}" encontrada no índice ${idx}`);
     });
     
     // Processa dados
@@ -69,13 +72,14 @@ function processarCSV(texto) {
         }
     }
     
+    console.log(`${dados.length} linhas processadas`);
     return dados;
 }
 
 // Verifica condições
 function verificarCondicoes(linha) {
     const parseNum = (valor) => {
-        if (!valor || valor === '(Empty)' || valor === '-' || valor === '') return null;
+        if (!valor || valor === '(Empty)' || valor === '-' || valor === '' || valor === '(empty)') return null;
         const num = parseFloat(valor.toString().replace(',', '.'));
         return isNaN(num) ? null : num;
     };
@@ -83,7 +87,8 @@ function verificarCondicoes(linha) {
     const cond1 = linha[COLUNAS.ACAO] && 
                   linha[COLUNAS.ACAO].trim() !== '-' && 
                   linha[COLUNAS.ACAO].trim() !== '' && 
-                  linha[COLUNAS.ACAO].trim() !== '(Empty)';
+                  linha[COLUNAS.ACAO].trim() !== '(Empty)' &&
+                  linha[COLUNAS.ACAO].trim() !== '(empty)';
     
     const desp1 = parseNum(linha[COLUNAS.DESP1]);
     const desl1 = parseNum(linha[COLUNAS.DESL1]);
@@ -97,6 +102,40 @@ function verificarCondicoes(linha) {
         cond1, cond2, cond3, cond4,
         temQualquer: cond1 || cond2 || cond3 || cond4
     };
+}
+
+// Formata valor para exibição
+function formatarValor(valor) {
+    if (!valor || valor === '(Empty)' || valor === '-' || valor === '(empty)') return '-';
+    return valor;
+}
+
+// Aplica cor à célula baseada na condição
+function aplicarCorCelula(valor, condicao, tipoCondicao) {
+    if (!condicao) return valor;
+    
+    const cores = {
+        cond1: 'rgba(247, 37, 133, 0.15)',
+        cond2: 'rgba(248, 150, 30, 0.15)',
+        cond3: 'rgba(67, 97, 238, 0.15)',
+        cond4: 'rgba(114, 9, 183, 0.15)'
+    };
+    
+    const textColors = {
+        cond1: '#f72585',
+        cond2: '#f8961e',
+        cond3: '#4361ee',
+        cond4: '#7209b7'
+    };
+    
+    return `<span style="
+        background: ${cores[tipoCondicao]};
+        color: ${textColors[tipoCondicao]};
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: inline-block;
+    ">${valor}</span>`;
 }
 
 // Atualiza tabela
@@ -136,13 +175,24 @@ function atualizarTabela() {
     document.getElementById('cond3').textContent = contadores.cond3;
     document.getElementById('cond4').textContent = contadores.cond4;
     
+    // Atualiza contador da tabela
+    document.getElementById('tableCount').textContent = 
+        `Mostrando ${dadosExibir.length} de ${dadosOriginais.length} equipes`;
+    
     // Renderiza tabela
     if (dadosExibir.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="mensagem">
-                    <i class="fas fa-search" style="font-size: 48px; color: #ddd;"></i>
-                    <p>Nenhuma equipe encontrada com o filtro atual</p>
+                <td colspan="8">
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h3 class="empty-title">Nenhuma equipe encontrada</h3>
+                        <p class="empty-text">
+                            Nenhuma equipe atende ao filtro selecionado. Tente outro filtro ou verifique os dados.
+                        </p>
+                    </div>
                 </td>
             </tr>
         `;
@@ -150,35 +200,29 @@ function atualizarTabela() {
     }
     
     let html = '';
-    dadosExibir.forEach(item => {
+    dadosExibir.forEach((item, index) => {
         const l = item.linha;
         const c = item.cond;
         
         let classe = '';
-        if (c.cond1) classe += 'vermelho ';
-        if (c.cond2) classe += 'laranja ';
-        if (c.cond3) classe += 'azul ';
-        if (c.cond4) classe += 'lilas ';
+        if (c.cond1) classe += 'cond1 ';
+        if (c.cond2) classe += 'cond2 ';
+        if (c.cond3) classe += 'cond3 ';
+        if (c.cond4) classe += 'cond4 ';
         
         html += `<tr class="${classe.trim()}">`;
-        html += `<td>${formatarValor(l[COLUNAS.EQUIPE])}</td>`;
+        html += `<td><strong>${formatarValor(l[COLUNAS.EQUIPE])}</strong></td>`;
         html += `<td>${formatarValor(l[COLUNAS.INICIO])}</td>`;
         html += `<td>${formatarValor(l[COLUNAS.LOGIN])}</td>`;
-        html += `<td style="${c.cond1 ? 'background-color: rgba(220, 53, 69, 0.3); font-weight: bold;' : ''}">${formatarValor(l[COLUNAS.ACAO])}</td>`;
+        html += `<td>${c.cond1 ? aplicarCorCelula(formatarValor(l[COLUNAS.ACAO]), c.cond1, 'cond1') : formatarValor(l[COLUNAS.ACAO])}</td>`;
         html += `<td>${formatarValor(l[COLUNAS.STATUS])}</td>`;
-        html += `<td style="${c.cond4 ? 'background-color: rgba(111, 66, 193, 0.3); font-weight: bold;' : ''}">${formatarValor(l[COLUNAS.LOGIN1])}</td>`;
-        html += `<td style="${c.cond2 ? 'background-color: rgba(253, 126, 20, 0.3); font-weight: bold;' : ''}">${formatarValor(l[COLUNAS.DESP1])}</td>`;
-        html += `<td style="${c.cond3 ? 'background-color: rgba(0, 123, 255, 0.3); font-weight: bold;' : ''}">${formatarValor(l[COLUNAS.DESL1])}</td>`;
+        html += `<td>${c.cond4 ? aplicarCorCelula(formatarValor(l[COLUNAS.LOGIN1]), c.cond4, 'cond4') : formatarValor(l[COLUNAS.LOGIN1])}</td>`;
+        html += `<td>${c.cond2 ? aplicarCorCelula(formatarValor(l[COLUNAS.DESP1]), c.cond2, 'cond2') : formatarValor(l[COLUNAS.DESP1])}</td>`;
+        html += `<td>${c.cond3 ? aplicarCorCelula(formatarValor(l[COLUNAS.DESL1]), c.cond3, 'cond3') : formatarValor(l[COLUNAS.DESL1])}</td>`;
         html += `</tr>`;
     });
     
     tbody.innerHTML = html;
-}
-
-// Formata valor para exibição
-function formatarValor(valor) {
-    if (!valor || valor === '(Empty)' || valor === '-') return '';
-    return valor;
 }
 
 // Aplica filtro
@@ -186,14 +230,20 @@ function filtrar(tipo) {
     filtroAtual = tipo;
     
     // Atualiza botões ativos
-    document.querySelectorAll('.filtro-btn').forEach(btn => {
-        btn.classList.remove('ativo');
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active');
     });
-    
-    event.target.classList.add('ativo');
+    event.target.classList.add('active');
     
     // Atualiza tabela
     atualizarTabela();
+    
+    // Animação suave
+    const tabela = document.querySelector('.table-section');
+    tabela.style.animation = 'none';
+    setTimeout(() => {
+        tabela.style.animation = 'fadeIn 0.5s ease';
+    }, 10);
 }
 
 // Carrega dados de exemplo
@@ -204,20 +254,83 @@ NORTE	EMERGENCIA	Manhã	ITE-RD-01B	12 - 4	Circle,ffc9c9c9	07:00	06:10	Circle,ff3
 NORTE	EMERGENCIA	Manhã	ITE-RD-03B	12 - 3	Circle,ffc9c9c9	07:00	06:55	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	No Local	42	Circle,ff50af28	-	0039937723	RJP3B07	3	53%	0	18	20	15:30	(Empty)	Não	Não	Sim	Manhã / 07
 NORTE	EMERGENCIA	Manhã	ACU-TR-02B	12 - 2	Circle,ffc9c9c9	08:00	07:41	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	No Local	66	Circle,ff50af28	Reparo >60	0039936013	SSZ0H63	2	48%	0	0	1	17:48	(Empty)	Não	Não	Sim	Manhã / 08
 NORTE	EMERGENCIA	Manhã	ACU-TR-03B	12 - 2	Circle,ffc9c9c9	09:00	07:56	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	No Local	6	Circle,ff50af28	-	0039937581	TLV1H86	2	58%	0	0	0	18:48	(Empty)	Não	Não	Sim	Manhã / 08
-NORTE	EMERGENCIA	Manhã	IPK-RD-11B	12 - 4	TriangleUp,ffb43c3c	06:00	05:34	Cross,ffffab9e	AUTOMATICO	ATLÂNTICO	No Local	63	Circle,ff50af28	Reparo >60	0039937043	SBC9B13	2	63%	0	11	19	14:20	(Empty)	Não	Não	Sim	Manhã / 06`;
+NORTE	EMERGENCIA	Manhã	IPK-RD-11B	12 - 4	TriangleUp,ffb43c3c	06:00	05:34	Cross,ffffab9e	AUTOMATICO	ATLÂNTICO	No Local	63	Circle,ff50af28	Reparo >60	0039937043	SBC9B13	2	63%	0	11	19	14:20	(Empty)	Não	Não	Sim	Manhã / 06
+NORTE	EMERGENCIA	Manhã	ITJ-SP-01B	12 - 2	Circle,ffc9c9c9	08:00	07:53	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	Em Deslocamento	12	Circle,ff50af28	-	0039937763	SWX6D34	2	81%	0	9	12	17:48	(Empty)	Não	Não	Sim	Manhã / 08
+NORTE	EMERGENCIA	Manhã	TRR-SG-01B	12 - 3	Circle,ffc9c9c9	08:00	06:47	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	No Local	36	Circle,ff50af28	-	0039935565	TCW4B49	2	70%	0	0	0	17:15	(Empty)	Não	Não	Sim	Manhã / 08`;
     
     try {
         dadosOriginais = processarCSV(exemploCSV);
-        alert(`Dados de exemplo carregados!\nTotal de equipes: ${dadosOriginais.length}`);
+        
+        // Atualiza interface
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.innerHTML = `
+            <div class="upload-icon" style="color: #4cc9f0">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2 class="upload-title">Dados de Exemplo Carregados!</h2>
+            <p class="upload-text">
+                <strong>${dadosOriginais.length} equipes</strong> carregadas com sucesso. 
+                Use os filtros abaixo para analisar os dados.
+            </p>
+            <div class="upload-actions">
+                <button class="btn btn-outline" onclick="trocarArquivo()">
+                    <i class="fas fa-redo"></i> Carregar Outro Arquivo
+                </button>
+            </div>
+        `;
+        
+        // Animação de confirmação
+        uploadArea.style.transform = 'scale(1.02)';
+        uploadArea.style.boxShadow = '0 15px 35px rgba(67, 97, 238, 0.2)';
+        setTimeout(() => {
+            uploadArea.style.transform = 'scale(1)';
+            uploadArea.style.boxShadow = 'var(--box-shadow)';
+        }, 300);
+        
         atualizarTabela();
+        
+        // Notificação visual
+        mostrarNotificacao('Dados de exemplo carregados com sucesso!', 'success');
+        
     } catch (erro) {
-        alert('Erro ao carregar exemplo: ' + erro.message);
+        mostrarNotificacao('Erro ao carregar exemplo: ' + erro.message, 'error');
     }
+}
+
+// Mostra notificação
+function mostrarNotificacao(mensagem, tipo) {
+    const notificacao = document.createElement('div');
+    notificacao.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 15px 25px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        z-index: 1000;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        animation: fadeIn 0.3s ease;
+        background: ${tipo === 'success' ? 'linear-gradient(135deg, #4cc9f0, #4895ef)' : 'linear-gradient(135deg, #f72585, #e63946)'};
+    `;
+    notificacao.textContent = mensagem;
+    document.body.appendChild(notificacao);
+    
+    setTimeout(() => {
+        notificacao.style.animation = 'fadeIn 0.3s ease reverse';
+        setTimeout(() => notificacao.remove(), 300);
+    }, 3000);
+}
+
+// Troca arquivo
+function trocarArquivo() {
+    location.reload();
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('fileInput');
+    const uploadArea = document.getElementById('uploadArea');
     
     fileInput.addEventListener('change', function(e) {
         const file = e.target.files[0];
@@ -230,23 +343,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 const texto = e.target.result;
                 dadosOriginais = processarCSV(texto);
                 
-                alert(`Arquivo "${file.name}" carregado com sucesso!\nEquipes encontradas: ${dadosOriginais.length}`);
-                
                 // Atualiza interface
-                document.querySelector('.upload-area').innerHTML = `
-                    <i class="fas fa-check-circle" style="color: #28a745"></i>
-                    <h3>Arquivo carregado!</h3>
-                    <p>${file.name}</p>
-                    <p><strong>${dadosOriginais.length}</strong> equipes processadas</p>
-                    <button class="btn" onclick="trocarArquivo()">
-                        <i class="fas fa-redo"></i> Trocar Arquivo
-                    </button>
+                uploadArea.innerHTML = `
+                    <div class="upload-icon" style="color: #4cc9f0">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="upload-title">Arquivo Carregado com Sucesso!</h2>
+                    <p class="upload-text">
+                        <strong>${dadosOriginais.length} equipes</strong> processadas do arquivo 
+                        <strong>${file.name}</strong>
+                    </p>
+                    <div class="upload-actions">
+                        <button class="btn btn-outline" onclick="trocarArquivo()">
+                            <i class="fas fa-redo"></i> Carregar Outro Arquivo
+                        </button>
+                    </div>
                 `;
                 
+                // Animação
+                uploadArea.style.transform = 'scale(1.02)';
+                uploadArea.style.boxShadow = '0 15px 35px rgba(67, 97, 238, 0.2)';
+                setTimeout(() => {
+                    uploadArea.style.transform = 'scale(1)';
+                    uploadArea.style.boxShadow = 'var(--box-shadow)';
+                }, 300);
+                
                 atualizarTabela();
+                mostrarNotificacao(`Arquivo "${file.name}" carregado com sucesso!`, 'success');
                 
             } catch (erro) {
-                alert('Erro ao processar arquivo: ' + erro.message);
+                mostrarNotificacao('Erro ao processar arquivo: ' + erro.message, 'error');
                 console.error(erro);
             }
         };
@@ -255,22 +381,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     // Drag and drop
-    const uploadArea = document.querySelector('.upload-area');
-    
     uploadArea.addEventListener('dragover', (e) => {
         e.preventDefault();
-        uploadArea.style.borderColor = '#28a745';
-        uploadArea.style.background = '#f0fff0';
+        uploadArea.style.borderColor = '#4cc9f0';
+        uploadArea.style.background = 'linear-gradient(135deg, rgba(76, 201, 240, 0.1), rgba(72, 149, 239, 0.1))';
     });
     
     uploadArea.addEventListener('dragleave', () => {
-        uploadArea.style.borderColor = '#007bff';
+        uploadArea.style.borderColor = 'var(--light-gray)';
         uploadArea.style.background = 'white';
     });
     
     uploadArea.addEventListener('drop', (e) => {
         e.preventDefault();
-        uploadArea.style.borderColor = '#007bff';
+        uploadArea.style.borderColor = 'var(--light-gray)';
         uploadArea.style.background = 'white';
         
         const file = e.dataTransfer.files[0];
@@ -280,45 +404,14 @@ document.addEventListener('DOMContentLoaded', () => {
             fileInput.files = dataTransfer.files;
             fileInput.dispatchEvent(new Event('change'));
         } else {
-            alert('Por favor, selecione um arquivo CSV válido.');
+            mostrarNotificacao('Por favor, selecione um arquivo CSV válido.', 'error');
         }
     });
-});
-
-// Função para trocar arquivo
-function trocarArquivo() {
-    document.querySelector('.upload-area').innerHTML = `
-        <i class="fas fa-file-upload"></i>
-        <h3>Clique ou arraste um arquivo CSV</h3>
-        <p>Suporta CSV com tabulação, vírgula ou ponto-e-vírgula</p>
-        <input type="file" id="fileInput" accept=".csv">
-        <br>
-        <button class="btn" onclick="document.getElementById('fileInput').click()">
-            <i class="fas fa-upload"></i> Selecionar Arquivo
-        </button>
-        <button class="btn" onclick="carregarExemplo()" style="background: #28a745">
-            <i class="fas fa-vial"></i> Usar Exemplo
-        </button>
-    `;
     
-    // Reativa o event listener
-    document.getElementById('fileInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        
-        const reader = new FileReader();
-        
-        reader.onload = function(e) {
-            try {
-                const texto = e.target.result;
-                dadosOriginais = processarCSV(texto);
-                alert(`Arquivo carregado! ${dadosOriginais.length} equipes.`);
-                atualizarTabela();
-            } catch (erro) {
-                alert('Erro: ' + erro.message);
-            }
-        };
-        
-        reader.readAsText(file);
-    });
-}
+    // Animação inicial
+    setTimeout(() => {
+        document.querySelectorAll('section').forEach((section, index) => {
+            section.style.animationDelay = `${index * 0.2}s`;
+        });
+    }, 100);
+});
