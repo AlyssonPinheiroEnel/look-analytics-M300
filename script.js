@@ -141,6 +141,7 @@ function aplicarCorCelula(valor, condicao, tipoCondicao) {
 // Atualiza tabela
 function atualizarTabela() {
     const tbody = document.getElementById('dados');
+    const exportBtn = document.getElementById('exportBtn');
     
     // Filtra dados conforme filtro atual
     let dadosExibir = [];
@@ -178,6 +179,9 @@ function atualizarTabela() {
     // Atualiza contador da tabela
     document.getElementById('tableCount').textContent = 
         `Mostrando ${dadosExibir.length} de ${dadosOriginais.length} equipes`;
+    
+    // Habilita/desabilita botão de exportação
+    exportBtn.disabled = dadosExibir.length === 0;
     
     // Renderiza tabela
     if (dadosExibir.length === 0) {
@@ -246,54 +250,281 @@ function filtrar(tipo) {
     }, 10);
 }
 
-// Carrega dados de exemplo
-function carregarExemplo() {
-    const exemploCSV = `Base	Tipo Equipe	Período	Equipe	Jornada	Refeição	Inicio Calendário	Login	GPS	Organizacao	Base DAP	Status Desloc	Tempo Etapa	Disp. Eorder	Ação	Incidência	Placa	Qtd Desloc	Util.	1º Login	1º Desp	1º Desl.	Fim calendário	LogOff	Ext Calendário	Realizou HE	Em Trabalho	Turno Equipe
-NORTE	EMERGENCIA	Manhã	ITE-RD-02B	12 - 4	TriangleUp,ffb43c3c	06:00	05:45	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	Em Deslocamento	25	Circle,ff50af28	-	0039938031	RJO3A72	5	27%	0	16	64	14:20	(Empty)	Não	Não	Sim	Manhã / 06
-NORTE	EMERGENCIA	Manhã	ITE-RD-01B	12 - 4	Circle,ffc9c9c9	07:00	06:10	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	Em Deslocamento	36	Circle,ff50af28	-	0039937919	BDU8C96	3	57%	0	23	27	15:20	(Empty)	Não	Não	Sim	Manhã / 07
-NORTE	EMERGENCIA	Manhã	ITE-RD-03B	12 - 3	Circle,ffc9c9c9	07:00	06:55	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	No Local	42	Circle,ff50af28	-	0039937723	RJP3B07	3	53%	0	18	20	15:30	(Empty)	Não	Não	Sim	Manhã / 07
-NORTE	EMERGENCIA	Manhã	ACU-TR-02B	12 - 2	Circle,ffc9c9c9	08:00	07:41	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	No Local	66	Circle,ff50af28	Reparo >60	0039936013	SSZ0H63	2	48%	0	0	1	17:48	(Empty)	Não	Não	Sim	Manhã / 08
-NORTE	EMERGENCIA	Manhã	ACU-TR-03B	12 - 2	Circle,ffc9c9c9	09:00	07:56	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	No Local	6	Circle,ff50af28	-	0039937581	TLV1H86	2	58%	0	0	0	18:48	(Empty)	Não	Não	Sim	Manhã / 08
-NORTE	EMERGENCIA	Manhã	IPK-RD-11B	12 - 4	TriangleUp,ffb43c3c	06:00	05:34	Cross,ffffab9e	AUTOMATICO	ATLÂNTICO	No Local	63	Circle,ff50af28	Reparo >60	0039937043	SBC9B13	2	63%	0	11	19	14:20	(Empty)	Não	Não	Sim	Manhã / 06
-NORTE	EMERGENCIA	Manhã	ITJ-SP-01B	12 - 2	Circle,ffc9c9c9	08:00	07:53	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	Em Deslocamento	12	Circle,ff50af28	-	0039937763	SWX6D34	2	81%	0	9	12	17:48	(Empty)	Não	Não	Sim	Manhã / 08
-NORTE	EMERGENCIA	Manhã	TRR-SG-01B	12 - 3	Circle,ffc9c9c9	08:00	06:47	Circle,ff37db7e	AUTOMATICO	ATLÂNTICO	No Local	36	Circle,ff50af28	-	0039935565	TCW4B49	2	70%	0	0	0	17:15	(Empty)	Não	Não	Sim	Manhã / 08`;
+// Exporta tabela para PNG com legenda
+async function exportarParaPNG() {
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const tableSection = document.getElementById('tableSection');
     
     try {
-        dadosOriginais = processarCSV(exemploCSV);
+        // Mostra loading
+        loadingOverlay.style.display = 'flex';
         
-        // Atualiza interface
-        const uploadArea = document.getElementById('uploadArea');
-        uploadArea.innerHTML = `
-            <div class="upload-icon" style="color: #4cc9f0">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <h2 class="upload-title">Dados de Exemplo Carregados!</h2>
-            <p class="upload-text">
-                <strong>${dadosOriginais.length} equipes</strong> carregadas com sucesso. 
-                Use os filtros abaixo para analisar os dados.
-            </p>
-            <div class="upload-actions">
-                <button class="btn btn-outline" onclick="trocarArquivo()">
-                    <i class="fas fa-redo"></i> Carregar Outro Arquivo
-                </button>
-            </div>
+        // Cria um container para a imagem
+        const exportContainer = document.createElement('div');
+        exportContainer.style.cssText = `
+            position: fixed;
+            top: -10000px;
+            left: -10000px;
+            width: 1200px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
         `;
         
-        // Animação de confirmação
-        uploadArea.style.transform = 'scale(1.02)';
-        uploadArea.style.boxShadow = '0 15px 35px rgba(67, 97, 238, 0.2)';
-        setTimeout(() => {
-            uploadArea.style.transform = 'scale(1)';
-            uploadArea.style.boxShadow = 'var(--box-shadow)';
-        }, 300);
+        // Adiciona título
+        const title = document.createElement('h1');
+        title.textContent = 'Dashboard de Equipes - Relatório Filtrado';
+        title.style.cssText = `
+            text-align: center;
+            color: #4361ee;
+            margin-bottom: 20px;
+            font-size: 24px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        `;
+        exportContainer.appendChild(title);
         
-        atualizarTabela();
+        // Adiciona data e hora
+        const now = new Date();
+        const dateTime = document.createElement('div');
+        dateTime.textContent = `Gerado em: ${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR')}`;
+        dateTime.style.cssText = `
+            text-align: center;
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+        `;
+        exportContainer.appendChild(dateTime);
         
-        // Notificação visual
-        mostrarNotificacao('Dados de exemplo carregados com sucesso!', 'success');
+        // Adiciona resumo
+        const summaryDiv = document.createElement('div');
+        summaryDiv.style.cssText = `
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+        `;
         
-    } catch (erro) {
-        mostrarNotificacao('Erro ao carregar exemplo: ' + erro.message, 'error');
+        const stats = [
+            { label: 'Total Equipes', value: document.getElementById('total').textContent, color: '#212529' },
+            { label: 'Ação ≠ "-"', value: document.getElementById('cond1').textContent, color: '#f72585' },
+            { label: '1º Desp > 10', value: document.getElementById('cond2').textContent, color: '#f8961e' },
+            { label: '1º Desl > 25', value: document.getElementById('cond3').textContent, color: '#4361ee' },
+            { label: '1º Login > 5', value: document.getElementById('cond4').textContent, color: '#7209b7' }
+        ];
+        
+        stats.forEach(stat => {
+            const statDiv = document.createElement('div');
+            statDiv.style.cssText = `
+                text-align: center;
+                padding: 15px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                border-left: 4px solid ${stat.color};
+            `;
+            
+            const label = document.createElement('div');
+            label.textContent = stat.label;
+            label.style.cssText = `
+                font-size: 12px;
+                color: #666;
+                margin-bottom: 8px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            `;
+            
+            const value = document.createElement('div');
+            value.textContent = stat.value;
+            value.style.cssText = `
+                font-size: 24px;
+                font-weight: bold;
+                color: #212529;
+            `;
+            
+            statDiv.appendChild(label);
+            statDiv.appendChild(value);
+            summaryDiv.appendChild(statDiv);
+        });
+        
+        exportContainer.appendChild(summaryDiv);
+        
+        // Adiciona filtro atual
+        const filterDiv = document.createElement('div');
+        filterDiv.style.cssText = `
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+        `;
+        
+        const filterLabels = {
+            'todos': 'Todas as Condições',
+            'cond1': 'Ação ≠ "-"',
+            'cond2': '1º Desp > 10',
+            'cond3': '1º Desl > 25',
+            'cond4': '1º Login > 5'
+        };
+        
+        filterDiv.textContent = `Filtro aplicado: ${filterLabels[filtroAtual]} | Mostrando ${document.getElementById('tableCount').textContent}`;
+        exportContainer.appendChild(filterDiv);
+        
+        // Adiciona legenda das cores
+        const legendDiv = document.createElement('div');
+        legendDiv.style.cssText = `
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        `;
+        
+        const legendTitle = document.createElement('div');
+        legendTitle.textContent = 'Legenda dos Indicadores:';
+        legendTitle.style.cssText = `
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #212529;
+            font-size: 16px;
+        `;
+        legendDiv.appendChild(legendTitle);
+        
+        const legendItems = [
+            { color: '#f72585', label: 'Ação preenchida (diferente de "-")' },
+            { color: '#f8961e', label: '1º Desp > 10 (tempo alto de despacho)' },
+            { color: '#4361ee', label: '1º Desl > 25 (deslocamento longo)' },
+            { color: '#7209b7', label: '1º Login > 5 (login atrasado)' }
+        ];
+        
+        legendItems.forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 8px;
+                padding: 8px 12px;
+                background: white;
+                border-radius: 4px;
+            `;
+            
+            const colorBox = document.createElement('div');
+            colorBox.style.cssText = `
+                width: 20px;
+                height: 20px;
+                border-radius: 4px;
+                background: ${item.color};
+            `;
+            
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = item.label;
+            labelSpan.style.cssText = `
+                font-size: 14px;
+                color: #495057;
+            `;
+            
+            itemDiv.appendChild(colorBox);
+            itemDiv.appendChild(labelSpan);
+            legendDiv.appendChild(itemDiv);
+        });
+        
+        exportContainer.appendChild(legendDiv);
+        
+        // Adiciona a tabela original (clonada)
+        const tableClone = document.getElementById('tableContainer').cloneNode(true);
+        tableClone.style.width = '100%';
+        tableClone.style.overflow = 'visible';
+        
+        // Remove elementos interativos e ajusta estilos
+        const table = tableClone.querySelector('table');
+        table.style.width = '100%';
+        table.style.minWidth = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.fontSize = '12px';
+        
+        // Ajusta estilos das células
+        const ths = table.querySelectorAll('th');
+        ths.forEach(th => {
+            th.style.padding = '12px 15px';
+            th.style.background = '#343a40';
+            th.style.color = 'white';
+            th.style.fontWeight = 'bold';
+            th.style.border = '1px solid #dee2e6';
+        });
+        
+        const tds = table.querySelectorAll('td');
+        tds.forEach(td => {
+            td.style.padding = '10px 15px';
+            td.style.border = '1px solid #dee2e6';
+        });
+        
+        exportContainer.appendChild(tableClone);
+        
+        // Adiciona footer
+        const footer = document.createElement('div');
+        footer.style.cssText = `
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        `;
+        footer.textContent = 'Dashboard de Equipes © 2024 | Gerado automaticamente';
+        exportContainer.appendChild(footer);
+        
+        // Adiciona ao documento
+        document.body.appendChild(exportContainer);
+        
+        // Usa html2canvas para converter em imagem
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const canvas = await html2canvas(exportContainer, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            logging: false,
+            onclone: (clonedDoc) => {
+                // Ajusta estilos no clone
+                const clonedContainer = clonedDoc.querySelector('div');
+                clonedContainer.style.position = 'relative';
+                clonedContainer.style.top = '0';
+                clonedContainer.style.left = '0';
+            }
+        });
+        
+        // Converte canvas para imagem PNG
+        const imgData = canvas.toDataURL('image/png');
+        
+        // Cria link para download
+        const link = document.createElement('a');
+        const fileName = `equipes_filtradas_${filtroAtual}_${Date.now()}.png`;
+        link.href = imgData;
+        link.download = fileName;
+        
+        // Adiciona tooltip de confirmação
+        mostrarNotificacao('Imagem PNG gerada com sucesso! Download iniciado...', 'success');
+        
+        // Força o download
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Remove o container de exportação
+        document.body.removeChild(exportContainer);
+        
+    } catch (error) {
+        console.error('Erro ao exportar PNG:', error);
+        mostrarNotificacao('Erro ao gerar imagem PNG: ' + error.message, 'error');
+    } finally {
+        // Esconde loading
+        loadingOverlay.style.display = 'none';
     }
 }
 

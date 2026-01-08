@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Equipes | Filtro Inteligente</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         :root {
             --primary: #4361ee;
@@ -164,6 +165,16 @@
             box-shadow: 0 8px 20px rgba(76, 201, 240, 0.3);
         }
         
+        .btn-info {
+            background: linear-gradient(135deg, #7209b7, #560bad);
+            color: white;
+        }
+        
+        .btn-info:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(114, 9, 183, 0.3);
+        }
+        
         .btn-outline {
             background: transparent;
             color: var(--primary);
@@ -316,6 +327,7 @@
             overflow: hidden;
             box-shadow: var(--box-shadow);
             animation: fadeIn 0.8s ease 0.8s both;
+            position: relative;
         }
         
         .table-header {
@@ -334,9 +346,16 @@
             gap: 10px;
         }
         
+        .table-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
         .table-count {
             color: rgba(255, 255, 255, 0.8);
             font-size: 0.95rem;
+            margin-right: 10px;
         }
         
         .table-container {
@@ -408,6 +427,36 @@
             margin: 0 auto;
         }
         
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .loading-text {
+            color: white;
+            font-size: 1.2rem;
+        }
+        
         /* Footer */
         footer {
             text-align: center;
@@ -447,6 +496,11 @@
             100% { transform: scale(1); }
         }
         
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         /* Responsive */
         @media (max-width: 768px) {
             .container {
@@ -479,6 +533,11 @@
                 flex-direction: column;
                 gap: 15px;
                 text-align: center;
+            }
+            
+            .table-actions {
+                flex-direction: column;
+                gap: 10px;
             }
             
             .filters {
@@ -520,6 +579,12 @@
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Gerando imagem PNG...</div>
+    </div>
+
     <div class="container">
         <!-- Header -->
         <header>
@@ -545,9 +610,6 @@
             <div class="upload-actions">
                 <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
                     <i class="fas fa-file-upload"></i> Selecionar Arquivo
-                </button>
-                <button class="btn btn-success" onclick="carregarExemplo()">
-                    <i class="fas fa-vial"></i> Usar Dados de Exemplo
                 </button>
             </div>
             <input type="file" id="fileInput" accept=".csv">
@@ -636,16 +698,21 @@
         </section>
 
         <!-- Table Section -->
-        <section class="table-section">
+        <section class="table-section" id="tableSection">
             <div class="table-header">
                 <h2 class="table-title">
                     <i class="fas fa-table"></i> Equipes Filtradas
                 </h2>
-                <div class="table-count" id="tableCount">
-                    Mostrando 0 de 0 equipes
+                <div class="table-actions">
+                    <div class="table-count" id="tableCount">
+                        Mostrando 0 de 0 equipes
+                    </div>
+                    <button class="btn btn-info" onclick="exportarParaPNG()" id="exportBtn" disabled>
+                        <i class="fas fa-camera"></i> Exportar PNG
+                    </button>
                 </div>
             </div>
-            <div class="table-container">
+            <div class="table-container" id="tableContainer">
                 <table id="tabela">
                     <thead>
                         <tr>
@@ -668,7 +735,7 @@
                                     </div>
                                     <h3 class="empty-title">Nenhum dado carregado</h3>
                                     <p class="empty-text">
-                                        Faça upload de um arquivo CSV ou use os dados de exemplo para visualizar as equipes filtradas.
+                                        Faça upload de um arquivo CSV para visualizar as equipes filtradas.
                                     </p>
                                 </div>
                             </td>
