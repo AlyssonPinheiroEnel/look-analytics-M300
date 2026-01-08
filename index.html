@@ -3,193 +3,233 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Filtragem de Produtividade</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Teste Filtro CSV</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .upload-area {
+            border: 2px dashed #007bff;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            background: white;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            background: #f0f8ff;
+        }
+        
+        .upload-area i {
+            font-size: 48px;
+            color: #007bff;
+            margin-bottom: 10px;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .resumo {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .card span {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        th {
+            background: #343a40;
+            color: white;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .vermelho { background-color: rgba(220, 53, 69, 0.1) !important; }
+        .laranja { background-color: rgba(253, 126, 20, 0.1) !important; }
+        .azul { background-color: rgba(0, 123, 255, 0.1) !important; }
+        .lilas { background-color: rgba(111, 66, 193, 0.1) !important; }
+        
+        .mensagem {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 18px;
+        }
+        
+        .filtros {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filtro-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .filtro-btn.ativo {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
-        <header class="app-header">
-            <div class="header-content">
-                <div class="logo-section">
-                    <i class="fas fa-chart-line logo-icon"></i>
-                    <div>
-                        <h1 class="app-title">Sistema de Filtragem de Produtividade</h1>
-                        <p class="app-subtitle">Análise automática de dados - Última atualização: <span id="lastUpdate">Carregando...</span></p>
-                    </div>
-                </div>
-                <div class="header-stats">
-                    <div class="stat-card">
-                        <i class="fas fa-file-csv stat-icon"></i>
-                        <div>
-                            <span class="stat-value" id="csvFileName">-</span>
-                            <span class="stat-label">Arquivo CSV</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <i class="fas fa-users stat-icon"></i>
-                        <div>
-                            <span class="stat-value" id="filteredTeams">0</span>
-                            <span class="stat-label">Filtradas</span>
-                        </div>
-                    </div>
-                </div>
+        <h1><i class="fas fa-filter"></i> Teste Filtro CSV</h1>
+        
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-file-upload"></i>
+            <h3>Clique ou arraste um arquivo CSV</h3>
+            <p>Suporta CSV com tabulação, vírgula ou ponto-e-vírgula</p>
+            <input type="file" id="fileInput" accept=".csv">
+            <br>
+            <button class="btn" onclick="document.getElementById('fileInput').click()">
+                <i class="fas fa-upload"></i> Selecionar Arquivo
+            </button>
+            <button class="btn" onclick="carregarExemplo()" style="background: #28a745">
+                <i class="fas fa-vial"></i> Usar Exemplo
+            </button>
+        </div>
+        
+        <div class="resumo">
+            <div class="card">
+                <h3>Total Equipes</h3>
+                <span id="total">0</span>
             </div>
-        </header>
-
-        <main class="app-main">
-            <section class="info-section card">
-                <div class="info-content">
-                    <div class="info-item">
-                        <i class="fas fa-info-circle info-icon"></i>
-                        <div>
-                            <h3>Como funciona:</h3>
-                            <p>O sistema carrega automaticamente o arquivo CSV da pasta <code>/data/</code>.</p>
-                            <p>Para atualizar os dados, basta fazer push de um novo arquivo CSV para o GitHub.</p>
-                        </div>
-                    </div>
-                    <div class="info-item">
-                        <i class="fas fa-sync-alt info-icon"></i>
-                        <div>
-                            <h3>Auto-atualização:</h3>
-                            <p>Última verificação: <span id="lastCheck">-</span></p>
-                            <button id="refreshBtn" class="btn btn-primary btn-sm">
-                                <i class="fas fa-redo"></i> Verificar Atualizações
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="filters-section card">
-                <h2 class="section-title">
-                    <i class="fas fa-filter"></i>
-                    Condições de Filtragem
-                    <span class="filter-toggle" id="toggleAllFilters">
-                        <i class="fas fa-toggle-on"></i> Todos
-                    </span>
-                </h2>
-                <div class="filters-grid" id="filtersContainer">
-                    <!-- Filtros serão gerados dinamicamente -->
-                </div>
-            </section>
-
-            <section class="results-section">
-                <div class="summary-card card">
-                    <h3 class="summary-title">
-                        <i class="fas fa-chart-pie"></i>
-                        Resumo da Análise
-                    </h3>
-                    <div class="summary-content" id="summaryContent">
-                        <div class="loading-state">
-                            <div class="spinner small"></div>
-                            <p>Carregando dados do CSV...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="table-container card">
-                    <div class="table-header">
-                        <h3 class="table-title">
-                            <i class="fas fa-table"></i>
-                            Resultados Filtrados
-                            <span class="badge" id="resultsCount">0 resultados</span>
-                        </h3>
-                        <div class="table-actions">
-                            <button id="toggleViewBtn" class="btn btn-outline btn-sm">
-                                <i class="fas fa-th-large"></i>
-                                Cards
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="loading-overlay" id="loadingOverlay">
-                        <div class="spinner"></div>
-                        <p>Processando dados...</p>
-                    </div>
-                    
-                    <div class="data-message" id="dataMessage">
-                        <!-- Mensagens de status serão exibidas aqui -->
-                    </div>
-                    
-                    <div class="table-view" id="tableView">
-                        <div class="table-wrapper">
-                            <table id="dataTable">
-                                <thead>
-                                    <tr>
-                                        <th>Equipe</th>
-                                        <th>Login</th>
-                                        <th>Início Calendário</th>
-                                        <th>Ação</th>
-                                        <th>Status Desloc</th>
-                                        <th>1º Login</th>
-                                        <th>1º Desp</th>
-                                        <th>1º Desl</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tableBody">
-                                    <!-- Dados serão inseridos aqui -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <div class="cards-view" id="cardsView" style="display: none;">
-                        <div class="cards-grid" id="cardsContainer">
-                            <!-- Cards serão gerados aqui -->
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <footer class="app-footer">
-            <div class="footer-content">
-                <div class="footer-info">
-                    <p><i class="fas fa-info-circle"></i> Sistema de Análise de Produtividade v2.0</p>
-                    <p class="footer-hint">Atualização automática via GitHub - Para atualizar os dados, faça push de um novo CSV</p>
-                </div>
-                <div class="footer-legend">
-                    <div class="legend-item">
-                        <span class="legend-color action"></span>
-                        <span>Ação ≠ "-"</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-color desp"></span>
-                        <span>1º Desp > 10</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-color desl"></span>
-                        <span>1º Desl > 25</span>
-                    </div>
-                    <div class="legend-item">
-                        <span class="legend-color login"></span>
-                        <span>1º Login > 5</span>
-                    </div>
-                </div>
+            <div class="card" style="border-left: 4px solid #dc3545">
+                <h3>Ação ≠ '-'</h3>
+                <span id="cond1">0</span>
             </div>
-        </footer>
-    </div>
-
-    <!-- Modal para detalhes -->
-    <div id="errorModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-exclamation-triangle"></i> Informação do Sistema</h3>
-                <button class="modal-close">&times;</button>
+            <div class="card" style="border-left: 4px solid #fd7e14">
+                <h3>1º Desp > 10</h3>
+                <span id="cond2">0</span>
             </div>
-            <div class="modal-body">
-                <p id="errorMessage"></p>
+            <div class="card" style="border-left: 4px solid #007bff">
+                <h3>1º Desl > 25</h3>
+                <span id="cond3">0</span>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary" id="closeErrorModal">OK</button>
+            <div class="card" style="border-left: 4px solid #6f42c1">
+                <h3>1º Login > 5</h3>
+                <span id="cond4">0</span>
             </div>
+        </div>
+        
+        <div class="filtros">
+            <button class="filtro-btn ativo" onclick="filtrar('todos')">Todas as Condições</button>
+            <button class="filtro-btn" onclick="filtrar('cond1')">Ação ≠ '-'</button>
+            <button class="filtro-btn" onclick="filtrar('cond2')">1º Desp > 10</button>
+            <button class="filtro-btn" onclick="filtrar('cond3')">1º Desl > 25</button>
+            <button class="filtro-btn" onclick="filtrar('cond4')">1º Login > 5</button>
+        </div>
+        
+        <div class="table-container">
+            <table id="tabela">
+                <thead>
+                    <tr>
+                        <th>Equipe</th>
+                        <th>Início Calendário</th>
+                        <th>Login</th>
+                        <th>Ação</th>
+                        <th>Status Desloc</th>
+                        <th>1º Login</th>
+                        <th>1º Desp</th>
+                        <th>1º Desl.</th>
+                    </tr>
+                </thead>
+                <tbody id="dados">
+                    <tr>
+                        <td colspan="8" class="mensagem">
+                            <i class="fas fa-database" style="font-size: 48px; color: #ddd; margin-bottom: 15px"></i>
+                            <p>Nenhum dado carregado</p>
+                            <p>Faça upload de um arquivo CSV para visualizar os dados</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <script src="js/csvLoader.js"></script>
-    <script src="js/dataFilter.js"></script>
-    <script src="js/uiManager.js"></script>
-    <script src="js/app.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
